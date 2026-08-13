@@ -15,6 +15,11 @@
 const POLL_INTERVAL_MS = 3 * 60 * 1000; // 每 3 分钟刷新
 const REQUEST_TIMEOUT_MS = 15_000;
 const GLM_HOST_RE = /bigmodel\.cn|z\.ai/i; // 国内站 open.bigmodel.cn / 国际站 api.z.ai
+// 代理场景兜底:provider 名字 AND key 形态都确认是智谱时,用官方主机查配额
+const GLM_PROVIDER_NAME_RE = /zhipu|glm|bigmodel/i;
+const GLM_KEY_RE = /^[0-9a-f]{32,}\.[A-Za-z0-9]+$/; // 智谱 key 形态: 32位hex id.secret
+// 代理兜底主机:默认国内站;国际站用户可设环境变量 GLM_QUOTA_HOST=https://api.z.ai 覆盖
+const DEFAULT_GLM_HOST = process.env.GLM_QUOTA_HOST ?? "https://open.bigmodel.cn";
 
 // 鲜艳色(truecolor ANSI,footer 直接渲染,不依赖主题)
 const VIVID = {
@@ -196,7 +201,12 @@ async function findGlmCredential(ctx: CtxLike): Promise<GlmCredential | null> {
 	const reg = ctx.modelRegistry;
 	for (const name of providerNamesOf(reg.getAvailable())) {
 		const baseUrl = reg.getProvider(name)?.baseUrl;
-		if (!baseUrl || !GLM_HOST_RE.test(baseUrl)) continue;
+		const directGlm = !!baseUrl && GLM_HOST_RE.test(baseUrl); // 直连智谱站点
+		const nameLooksGlm = GLM_PROVIDER_NAME_RE.test(name); // provider 名像智谱(代理场景)
+
+		// 安全门:只对"直连智谱"或"名字像智谱"的 provider 读取密钥,
+		// 避免把其它 provider 的密钥误发到智谱端点
+		if (!directGlm && !nameLooksGlm) continue;
 
 		let apiKey: string | undefined;
 		try {
@@ -204,7 +214,12 @@ async function findGlmCredential(ctx: CtxLike): Promise<GlmCredential | null> {
 		} catch {
 			apiKey = undefined;
 		}
-		if (apiKey) return { apiKey, baseUrl };
+		if (!apiKey) continue;
+
+		// 1) 直连智谱:用 baseUrl 里的真实主机
+		if (directGlm) return { apiKey, baseUrl: baseUrl! };
+		// 2) 走代理(本地 baseUrl):provider 名 AND key 形态都确认是智谱 → 用默认官方主机
+		if (GLM_KEY_RE.test(apiKey)) return { apiKey, baseUrl: DEFAULT_GLM_HOST };
 	}
 	return null;
 }
