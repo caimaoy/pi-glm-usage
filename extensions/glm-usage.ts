@@ -78,6 +78,10 @@ interface PiExtensionApi {
 		event: "session_start",
 		handler: (event: unknown, ctx: CtxLike) => void | Promise<void>,
 	): void;
+	on(
+		event: "agent_start",
+		handler: (event: unknown, ctx: CtxLike) => void | Promise<void>,
+	): void;
 	on(event: "session_shutdown", handler: () => void): void;
 }
 
@@ -227,8 +231,11 @@ async function findGlmCredential(ctx: CtxLike): Promise<GlmCredential | null> {
 // ── 插件入口 ────────────────────────────────────────────────────────
 export default function (pi: PiExtensionApi): void {
 	let timer: ReturnType<typeof setInterval> | null = null;
+	let booted = false;
 
-	pi.on("session_start", async (_event, ctx) => {
+	const bootstrap = (ctx: CtxLike): void => {
+		if (booted) return;
+		booted = true;
 		let credential: GlmCredential | null = null;
 
 		const refresh = async (): Promise<void> => {
@@ -246,15 +253,21 @@ export default function (pi: PiExtensionApi): void {
 			ui.setStatus("glm-usage", fmtStatus(usage));
 		};
 
-		await refresh();
+		void refresh();
 		if (timer) clearInterval(timer);
 		timer = setInterval(refresh, POLL_INTERVAL_MS);
-	});
+	};
+
+	// 常规启动
+	pi.on("session_start", (_event, ctx) => bootstrap(ctx));
+	// /reload 不触发 session_start:懒启动,下一条消息点亮 footer
+	pi.on("agent_start", (_event, ctx) => bootstrap(ctx));
 
 	pi.on("session_shutdown", () => {
 		if (timer) {
 			clearInterval(timer);
 			timer = null;
 		}
+		booted = false;
 	});
 }
