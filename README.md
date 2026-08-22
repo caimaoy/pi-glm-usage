@@ -1,4 +1,4 @@
-# pi-glm-usage
+# pi-zhipu-usage
 
 A [pi](https://github.com/earendil-works/pi-mono) extension that shows your **GLM Coding Plan** usage and next-reset countdown in the footer status bar.
 
@@ -17,7 +17,13 @@ GLM lite  │  5h 69% · 3h3m 后刷新  │  周 28% · 3d 后刷新
 
 ## Install
 
-From GitHub:
+From npm:
+
+```bash
+pi install npm:pi-zhipu-usage
+```
+
+Or from GitHub:
 
 ```bash
 pi install git:github.com/caimaoy/pi-glm-usage
@@ -27,11 +33,11 @@ Or add to `~/.pi/agent/settings.json`:
 
 ```json
 {
-  "packages": ["git:github.com/caimaoy/pi-glm-usage"]
+  "packages": ["npm:pi-zhipu-usage"]
 }
 ```
 
-Then `/reload` in pi (or restart). The status shows up in the footer once a GLM provider is configured.
+Then `/reload` in pi (or restart). With v0.2.0+, `/reload` lights up the footer on your next message — no restart needed. The status shows up once a GLM provider is configured.
 
 > Replace `caimaoy` with the actual GitHub owner if you fork.
 
