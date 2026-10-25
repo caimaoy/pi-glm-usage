@@ -1,8 +1,8 @@
 {
 	"name": "pi-zhipu-usage",
-	"version": "0.2.0",
-	"description": "Pi extension: show GLM Coding Plan usage and reset countdown in the footer. Supports Zhipu domestic (open.bigmodel.cn), international (api.z.ai), and local proxy / Headroom setups.",
-	"keywords": ["pi-package", "glm", "zhipu", "bigmodel", "z-ai", "coding-plan", "usage", "quota"],
+	"version": "0.3.0",
+	"description": "Pi extension: show GLM Coding Plan usage and reset countdown in the footer. Supports Zhipu domestic (open.bigmodel.cn), international (api.z.ai), local proxy / Headroom setups, and @zigai/pi-footer slot integration.",
+	"keywords": ["pi-package", "glm", "zhipu", "bigmodel", "z-ai", "coding-plan", "usage", "quota", "pi-footer"],
 	"license": "MIT",
 	"author": "caimaoy",
 	"repository": {
@@ -12,6 +12,14 @@
 	"homepage": "https://github.com/caimaoy/pi-glm-usage#readme",
 	"bugs": "https://github.com/caimaoy/pi-glm-usage/issues",
 	"files": ["extensions", "README.md", "LICENSE"],
+	"peerDependencies": {
+		"@zigai/pi-footer": "*"
+	},
+	"peerDependenciesMeta": {
+		"@zigai/pi-footer": {
+			"optional": true
+		}
+	},
 	"pi": {
 		"extensions": ["./extensions"]
 	}

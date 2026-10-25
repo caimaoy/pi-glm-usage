@@ -8,6 +8,7 @@ A [pi](https://github.com/earendil-works/pi-mono) extension that shows your **GL
 - 🎨 Color-coded by usage: 🟢 green `<30%` · default · 🟠 orange `≥70%` · 🔴 red `≥90%`
 - ⚙️ Zero-config — auto-detects your GLM API key from pi's configured providers
 - 🌐 Works with Zhipu domestic (`open.bigmodel.cn`) and international (`api.z.ai`); also auto-detects GLM behind a local proxy (e.g. Headroom) — see [How it works](#how-it-works)
+- 🧩 Compatible with `@zigai/pi-footer` — when the footer is taken over by pi-footer, usage shows up as a `glm-usage.quota` slot (right side by default); see [pi-footer compatibility](#pi-footer-compatibility)
 
 Example footer line:
 
@@ -40,6 +41,19 @@ Or add to `~/.pi/agent/settings.json`:
 Then `/reload` in pi (or restart). With v0.2.0+, `/reload` lights up the footer on your next message — no restart needed. The status shows up once a GLM provider is configured.
 
 > Replace `caimaoy` with the actual GitHub owner if you fork.
+
+## pi-footer compatibility
+
+If you also use [`@zigai/pi-footer`](https://www.npmjs.com/package/@zigai/pi-footer) (which takes over the footer and replaces the built-in status line), this extension automatically detects it at startup and registers a `glm-usage.quota` slot (right side by default) via its official slot API instead of `ui.setStatus()`:
+
+```
+~/project · zhipu · glm-5.2 · think:off    context 3.2% · GLM lite  5h 14% · 1h23m 后刷新
+```
+
+- Truecolor ANSI colors pass through the slot text unchanged — color thresholds (🟢 `<30` / 🟠 `≥70` / 🔴 `≥90`) keep working
+- You can move or hide `glm-usage.quota` in pi-footer's layout config
+- If pi-footer is not installed (or fails to load), the extension silently falls back to `ui.setStatus()` — same behavior as v0.2.0
+- `@zigai/pi-footer` is an **optional** peer dependency: it is never installed automatically
 
 ## How it works
 
