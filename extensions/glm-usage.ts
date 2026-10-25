@@ -72,6 +72,31 @@ interface CtxLike {
 		setStatus(key: string, text: string | undefined): void;
 	};
 }
+
+// ── @zigai/pi-footer 槽位桥接(可选)───────────────────────────────
+// pi-footer 接管底栏后不渲染 setStatus 的内容;
+// 检测到它存在时改走其官方自定义槽位 API,否则退回 setStatus。
+interface FooterSlotHandleLike {
+	setText(text: string): void;
+	clear(): void;
+	dispose(): void;
+}
+let footerSlotReady: Promise<FooterSlotHandleLike | null> | null = null;
+
+function detectFooterSlot(): Promise<FooterSlotHandleLike | null> {
+	if (!footerSlotReady) {
+		footerSlotReady = import("@zigai/pi-footer/api")
+			.then((mod) =>
+				mod.registerFooterSlot({
+					id: "glm-usage.quota",
+					defaultSide: "right",
+					text: "GLM 用量…",
+				}),
+			)
+			.catch(() => null); // 未安装 pi-footer / 解析失败 → 退回 setStatus
+	}
+	return footerSlotReady;
+}
 // 最小化的扩展 API 类型(让单文件零外部依赖也能通过类型检查)
 interface PiExtensionApi {
 	on(
@@ -240,17 +265,22 @@ export default function (pi: PiExtensionApi): void {
 
 		const refresh = async (): Promise<void> => {
 			const ui = ctx.ui;
-			if (!ui?.setStatus) return;
+			const slot = await detectFooterSlot(); // pi-footer 槽位优先
+			const show = (text: string): void => {
+				if (slot) slot.setText(text);
+				else if (ui?.setStatus) ui.setStatus("glm-usage", text);
+			};
+			if (!slot && !ui?.setStatus) return;
 			if (!credential) {
 				const found = await findGlmCredential(ctx);
 				if (!found) {
-					ui.setStatus("glm-usage", "GLM 用量: 未找到 GLM 凭据");
+					show("GLM 用量: 未找到 GLM 凭据");
 					return;
 				}
 				credential = found;
 			}
 			const usage = await queryGlmUsage(credential);
-			ui.setStatus("glm-usage", fmtStatus(usage));
+			show(fmtStatus(usage));
 		};
 
 		void refresh();
